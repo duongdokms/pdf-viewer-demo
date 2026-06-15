@@ -33,7 +33,7 @@ const PDFViewer = () => {
       : '/webviewer';
     
     const pdfDoc = process.env.REACT_APP_INITIAL_PDF 
-      || '/sample.pdf';
+      || (isOnlineIDE ? 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf' : '/sample.pdf');
     
     console.log('Environment:', isOnlineIDE ? 'Online IDE' : 'Localhost');
     console.log('WebViewer Path:', webViewerPath);
@@ -55,6 +55,8 @@ const PDFViewer = () => {
         path: webViewerPath,
         initialDoc: pdfDoc,
         licenseKey: process.env.REACT_APP_APRYSE_LICENSE_KEY || 'YOUR_LICENSE_KEY_HERE',
+        // Force client-side initialization for cross-domain CDN usage
+        forceClientSideInit: isOnlineIDE,
         // Hide default toolbar and UI elements to use custom controls
         // disabledElements: [
         //   'header',
