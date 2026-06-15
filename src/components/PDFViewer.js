@@ -23,23 +23,31 @@ const PDFViewer = () => {
 
     console.log('Initializing WebViewer...');
     
-    // Use CDN for reliability - works everywhere
-    const webViewerPath = 'https://unpkg.com/@pdftron/webviewer@10.11.0/public';
+    // Use local files for localhost, CDN only for online IDEs
+    const isOnlineIDE = window.location.hostname !== 'localhost' && 
+                        window.location.hostname !== '127.0.0.1' &&
+                        !window.location.hostname.startsWith('192.168.');
+    
+    const webViewerPath = isOnlineIDE 
+      ? 'https://unpkg.com/@pdftron/webviewer@10.11.0/public'
+      : '/webviewer';
     
     const pdfDoc = process.env.REACT_APP_INITIAL_PDF 
       || '/sample.pdf';
     
+    console.log('Environment:', isOnlineIDE ? 'Online IDE' : 'Localhost');
     console.log('WebViewer Path:', webViewerPath);
     console.log('Initial Doc:', pdfDoc);
 
     // Set a timeout to detect if WebViewer is hanging
+    const timeoutMs = isOnlineIDE ? 30000 : 15000;
     const timeoutId = setTimeout(() => {
       if (!webViewerInstanceRef.current) {
         console.error('WebViewer initialization timeout');
         setIsLoading(false);
-        setError('Failed to load WebViewer from CDN. Please check your internet connection and try refreshing the page.');
+        setError('Failed to initialize WebViewer. Please ensure you have run: npm install && npm run postinstall');
       }
-    }, 30000); // 30 second timeout for CDN
+    }, timeoutMs);
 
     // Initialize WebViewer with error handling
     WebViewer(
@@ -341,9 +349,9 @@ const PDFViewer = () => {
         {isLoading && (
           <div className="loading-overlay">
             <div className="spinner"></div>
-            <p>Loading PDF Viewer from CDN...</p>
+            <p>Loading PDF Viewer...</p>
             <p style={{ fontSize: '0.85rem', marginTop: '10px', opacity: 0.7 }}>
-              First load may take 10-30 seconds. Please wait...
+              Initializing WebViewer. First load may take a few moments...
             </p>
           </div>
         )}
