@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "React app demonstrating Apryse PDF viewer capabilities for SPECOPS-1445",
   "private": true,
-  "homepage": ".",
+  "homepage": "https://duongdokms.github.io/pdf-viewer-demo",
   "dependencies": {
     "@pdftron/webviewer": "^10.11.0",
     "react": "^18.2.0",

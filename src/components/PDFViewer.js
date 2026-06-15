@@ -23,35 +23,25 @@ const PDFViewer = () => {
 
     console.log('Initializing WebViewer...');
     
-    // Always use local files - avoids cross-domain issues
-    // For StackBlitz: make sure public/webviewer/ is committed to your repo
-    const webViewerPath = '/webviewer';
+    // Use PUBLIC_URL for GitHub Pages subdirectory support
+    const publicUrl = process.env.PUBLIC_URL || '';
+    const webViewerPath = `${publicUrl}/webviewer`;
+    const pdfDoc = process.env.REACT_APP_INITIAL_PDF || `${publicUrl}/sample.pdf`;
     
-    // Use demo PDF if on StackBlitz/online IDE (sample.pdf might not be committed)
-    const isOnlineIDE = window.location.hostname !== 'localhost' && 
-                        window.location.hostname !== '127.0.0.1' &&
-                        !window.location.hostname.startsWith('192.168.');
-    
-    const pdfDoc = process.env.REACT_APP_INITIAL_PDF 
-      || (isOnlineIDE ? 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf' : '/sample.pdf');
-    
-    console.log('Environment:', isOnlineIDE ? 'Online IDE' : 'Localhost');
+    console.log('PUBLIC_URL:', publicUrl);
     console.log('WebViewer Path:', webViewerPath);
     console.log('Initial Doc:', pdfDoc);
-    console.log('Checking WebViewer files at:', window.location.origin + webViewerPath);
+    console.log('Full WebViewer URL:', window.location.origin + webViewerPath);
 
-    // Set a timeout - longer for online IDEs (first load can be slow)
-    const timeoutMs = isOnlineIDE ? 45000 : 15000;
-    console.log('Timeout set to:', timeoutMs / 1000, 'seconds');
-    
+    // Set initialization timeout
     const timeoutId = setTimeout(() => {
       if (!webViewerInstanceRef.current) {
-        console.error('WebViewer initialization timeout after', timeoutMs / 1000, 'seconds');
-        console.error('Check that', window.location.origin + webViewerPath + '/core', 'is accessible');
+        console.error('WebViewer initialization timeout');
+        console.error('Attempted to load from:', window.location.origin + webViewerPath);
         setIsLoading(false);
-        setError(`WebViewer failed to load after ${timeoutMs / 1000} seconds. The library files may be missing or the server is slow. Try refreshing the page.`);
+        setError('Failed to initialize WebViewer. The library files may be missing. Check the browser console for details.');
       }
-    }, timeoutMs);
+    }, 30000);
 
     // Initialize WebViewer with error handling
     WebViewer(
@@ -355,9 +345,7 @@ const PDFViewer = () => {
             <div className="spinner"></div>
             <p>Loading PDF Viewer...</p>
             <p style={{ fontSize: '0.85rem', marginTop: '10px', opacity: 0.7 }}>
-              {window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
-                ? 'First load on StackBlitz may take 30-45 seconds. Please be patient...'
-                : 'Initializing WebViewer. First load may take a few moments...'}
+              Initializing WebViewer. First load may take a few moments...
             </p>
           </div>
         )}
