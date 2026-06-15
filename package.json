@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "React app demonstrating Apryse PDF viewer capabilities for SPECOPS-1445",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@pdftron/webviewer": "^10.11.0",
     "react": "^18.2.0",
@@ -15,7 +16,12 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "postinstall": "node scripts/copy-webviewer.js"
+    "postinstall": "node scripts/copy-webviewer.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.0"
   },
   "eslintConfig": {
     "extends": [
