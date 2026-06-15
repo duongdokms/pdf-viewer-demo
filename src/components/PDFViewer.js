@@ -23,29 +23,23 @@ const PDFViewer = () => {
 
     console.log('Initializing WebViewer...');
     
-    // Auto-detect: use CDN if local files don't exist (for StackBlitz/CodeSandbox)
-    const isOnlineIDE = !window.location.hostname.includes('localhost') && 
-                        !window.location.hostname.includes('127.0.0.1');
-    
-    const webViewerPath = isOnlineIDE 
-      ? 'https://unpkg.com/@pdftron/webviewer@10.11.0/public'
-      : '/webviewer';
+    // Use CDN for reliability - works everywhere
+    const webViewerPath = 'https://unpkg.com/@pdftron/webviewer@10.11.0/public';
     
     const pdfDoc = process.env.REACT_APP_INITIAL_PDF 
       || '/sample.pdf';
     
-    console.log('Environment:', isOnlineIDE ? 'Online IDE (using CDN)' : 'Local (using local files)');
-    console.log('Path:', webViewerPath);
+    console.log('WebViewer Path:', webViewerPath);
     console.log('Initial Doc:', pdfDoc);
 
     // Set a timeout to detect if WebViewer is hanging
     const timeoutId = setTimeout(() => {
       if (!webViewerInstanceRef.current) {
-        console.error('WebViewer initialization timeout - library files may be missing');
+        console.error('WebViewer initialization timeout');
         setIsLoading(false);
-        setError('WebViewer initialization timeout. The library files may not be properly installed. Please run: npm install && npm run postinstall');
+        setError('Failed to load WebViewer from CDN. Please check your internet connection and try refreshing the page.');
       }
-    }, 10000); // 10 second timeout
+    }, 30000); // 30 second timeout for CDN
 
     // Initialize WebViewer with error handling
     WebViewer(
@@ -118,8 +112,9 @@ const PDFViewer = () => {
     }).catch((err) => {
       clearTimeout(timeoutId);
       console.error('WebViewer initialization error:', err);
+      console.error('Error details:', err.message || err);
       setIsLoading(false);
-      setError('Failed to initialize PDF Viewer. Please ensure the WebViewer library is installed. Run: npm install && npm run postinstall');
+      setError(`Failed to initialize WebViewer: ${err.message || 'Unknown error'}. Please refresh the page or check your internet connection.`);
     });
 
     // Cleanup function to prevent memory leaks
@@ -346,11 +341,9 @@ const PDFViewer = () => {
         {isLoading && (
           <div className="loading-overlay">
             <div className="spinner"></div>
-            <p>Loading PDF Viewer...</p>
+            <p>Loading PDF Viewer from CDN...</p>
             <p style={{ fontSize: '0.85rem', marginTop: '10px', opacity: 0.7 }}>
-              {!window.location.hostname.includes('localhost') 
-                ? 'Loading from CDN (first load may take 10-20 seconds)...' 
-                : 'Initializing...'}
+              First load may take 10-30 seconds. Please wait...
             </p>
           </div>
         )}
