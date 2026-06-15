@@ -22,8 +22,21 @@ const PDFViewer = () => {
     }
 
     console.log('Initializing WebViewer...');
-    console.log('Path:', '/webviewer');
-    console.log('Initial Doc:', process.env.REACT_APP_INITIAL_PDF || '/sample.pdf');
+    
+    // Auto-detect: use CDN if local files don't exist (for StackBlitz/CodeSandbox)
+    const isOnlineIDE = !window.location.hostname.includes('localhost') && 
+                        !window.location.hostname.includes('127.0.0.1');
+    
+    const webViewerPath = isOnlineIDE 
+      ? 'https://unpkg.com/@pdftron/webviewer@10.11.0/public'
+      : '/webviewer';
+    
+    const pdfDoc = process.env.REACT_APP_INITIAL_PDF 
+      || '/sample.pdf';
+    
+    console.log('Environment:', isOnlineIDE ? 'Online IDE (using CDN)' : 'Local (using local files)');
+    console.log('Path:', webViewerPath);
+    console.log('Initial Doc:', pdfDoc);
 
     // Set a timeout to detect if WebViewer is hanging
     const timeoutId = setTimeout(() => {
@@ -37,8 +50,8 @@ const PDFViewer = () => {
     // Initialize WebViewer with error handling
     WebViewer(
       {
-        path: '/webviewer',
-        initialDoc: process.env.REACT_APP_INITIAL_PDF || '/sample.pdf',
+        path: webViewerPath,
+        initialDoc: pdfDoc,
         licenseKey: process.env.REACT_APP_APRYSE_LICENSE_KEY || 'YOUR_LICENSE_KEY_HERE',
         // Hide default toolbar and UI elements to use custom controls
         // disabledElements: [
@@ -81,8 +94,11 @@ const PDFViewer = () => {
       // Document load failed event
       documentViewer.addEventListener('loaderror', (err) => {
         console.error('Document load error:', err);
-        setIsLoading(false);
-        setError('Failed to load PDF. Please ensure sample.pdf exists in the public folder.');
+        console.log('Attempting to load demo PDF...');
+        
+        // Try loading demo PDF as fallback
+        const demoPDF = 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf';
+        inst.UI.loadDocument(demoPDF);
       });
 
       // Page number changed event
@@ -331,6 +347,11 @@ const PDFViewer = () => {
           <div className="loading-overlay">
             <div className="spinner"></div>
             <p>Loading PDF Viewer...</p>
+            <p style={{ fontSize: '0.85rem', marginTop: '10px', opacity: 0.7 }}>
+              {!window.location.hostname.includes('localhost') 
+                ? 'Loading from CDN (first load may take 10-20 seconds)...' 
+                : 'Initializing...'}
+            </p>
           </div>
         )}
         {error && (
