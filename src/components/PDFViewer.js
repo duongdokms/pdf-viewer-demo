@@ -23,14 +23,14 @@ const PDFViewer = () => {
 
     console.log('Initializing WebViewer...');
     
-    // Use local files for localhost, CDN only for online IDEs
+    // Always use local files - avoids cross-domain issues
+    // For StackBlitz: make sure public/webviewer/ is committed to your repo
+    const webViewerPath = '/webviewer';
+    
+    // Use demo PDF if on StackBlitz/online IDE (sample.pdf might not be committed)
     const isOnlineIDE = window.location.hostname !== 'localhost' && 
                         window.location.hostname !== '127.0.0.1' &&
                         !window.location.hostname.startsWith('192.168.');
-    
-    const webViewerPath = isOnlineIDE 
-      ? 'https://unpkg.com/@pdftron/webviewer@10.11.0/public'
-      : '/webviewer';
     
     const pdfDoc = process.env.REACT_APP_INITIAL_PDF 
       || (isOnlineIDE ? 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf' : '/sample.pdf');
@@ -40,14 +40,13 @@ const PDFViewer = () => {
     console.log('Initial Doc:', pdfDoc);
 
     // Set a timeout to detect if WebViewer is hanging
-    const timeoutMs = isOnlineIDE ? 30000 : 15000;
     const timeoutId = setTimeout(() => {
       if (!webViewerInstanceRef.current) {
         console.error('WebViewer initialization timeout');
         setIsLoading(false);
-        setError('Failed to initialize WebViewer. Please ensure you have run: npm install && npm run postinstall');
+        setError('Failed to initialize WebViewer. Ensure public/webviewer/ folder exists and is committed to your repo.');
       }
-    }, timeoutMs);
+    }, 15000);
 
     // Initialize WebViewer with error handling
     WebViewer(
@@ -55,8 +54,6 @@ const PDFViewer = () => {
         path: webViewerPath,
         initialDoc: pdfDoc,
         licenseKey: process.env.REACT_APP_APRYSE_LICENSE_KEY || 'YOUR_LICENSE_KEY_HERE',
-        // Force client-side initialization for cross-domain CDN usage
-        forceClientSideInit: isOnlineIDE,
         // Hide default toolbar and UI elements to use custom controls
         // disabledElements: [
         //   'header',

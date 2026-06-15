@@ -13,9 +13,8 @@ const isOnlineIDE = isStackBlitz ||
 
 if (isOnlineIDE) {
   console.log('🌐 Detected online IDE (StackBlitz/CodeSandbox/Gitpod)');
-  console.log('⏭️  Skipping WebViewer copy - will use CDN instead');
-  console.log('✅ Setup complete! The app will load WebViewer from CDN.');
-  process.exit(0);
+  console.log('⚠️  WebViewer files should be committed to git for deployment');
+  console.log('ℹ️  Attempting to copy files (may fail on some platforms)...');
 }
 
 const sourceDir = path.resolve(__dirname, '../node_modules/@pdftron/webviewer/public');
@@ -41,8 +40,19 @@ try {
   // Copy the directory
   fs.copySync(sourceDir, targetDir);
   console.log('✅ Apryse WebViewer library copied successfully!');
+  
+  if (isOnlineIDE) {
+    console.log('📝 Note: For StackBlitz deployment, commit public/webviewer/ to your git repo');
+  }
 } catch (error) {
   console.error('❌ Error copying WebViewer library:', error.message);
-  console.warn('⚠️  If running on StackBlitz, this is expected. The app will use CDN instead.');
-  process.exit(1);
+  
+  if (isOnlineIDE) {
+    console.warn('⚠️  Copy failed on online IDE - this is expected');
+    console.warn('⚠️  Make sure public/webviewer/ is committed to your git repository');
+    console.log('✅ Continuing anyway...');
+    process.exit(0); // Don't fail the build
+  } else {
+    process.exit(1);
+  }
 }
