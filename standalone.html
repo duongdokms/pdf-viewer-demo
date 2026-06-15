@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apryse PDF Viewer Demo - Standalone</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/@pdftron/webviewer@10.11.0/public/core/webviewer-core.min.js"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background-color: #f5f5f5;
+    }
+    .App {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .App-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      color: white;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .App-header h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    .App-header .subtitle {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+    .App-main {
+      flex: 1;
+      padding: 20px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .pdf-viewer-container {
+      display: flex;
+      gap: 20px;
+      height: calc(100vh - 140px);
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .controls-panel {
+      width: 320px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .control-section {
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .control-section h3 {
+      font-size: 1rem;
+      color: #333;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .control-btn {
+      padding: 10px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+    .control-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .control-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .status-text {
+      font-size: 0.85rem;
+      color: #666;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 500;
+    }
+    .viewer-wrapper {
+      flex: 1;
+      position: relative;
+      background: #525659;
+    }
+    .webviewer {
+      width: 100%;
+      height: 100%;
+    }
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    const PDFViewer = () => {
+      const viewer = useRef(null);
+      const [instance, setInstance] = useState(null);
+      const [isLoading, setIsLoading] = useState(true);
+
+      useEffect(() => {
+        WebViewer({
+          path: 'https://unpkg.com/@pdftron/webviewer@10.11.0/public',
+          initialDoc: 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf',
+          licenseKey: 'YOUR_LICENSE_KEY_HERE',
+        }, viewer.current).then((inst) => {
+          setInstance(inst);
+          setIsLoading(false);
+        });
+      }, []);
+
+      return (
+        <div className="App">
+          <header className="App-header">
+            <h1>Apryse PDF Viewer Demo</h1>
+            <p className="subtitle">Standalone HTML Version</p>
+          </header>
+          <main className="App-main">
+            <div className="pdf-viewer-container">
+              <div className="controls-panel">
+                <div className="control-section">
+                  <h3>📋 Standalone Demo</h3>
+                  <p style={{fontSize: '0.85rem', lineHeight: '1.6'}}>
+                    This is a simplified standalone HTML version.
+                    For the full demo with all controls, deploy to StackBlitz.
+                  </p>
+                </div>
+              </div>
+              <div className="viewer-wrapper">
+                {isLoading && <div className="loading">Loading PDF Viewer...</div>}
+                <div className="webviewer" ref={viewer}></div>
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PDFViewer />);
+  </script>
+</body>
+</html>
