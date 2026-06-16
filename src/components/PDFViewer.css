@@ -8,6 +8,16 @@
   overflow: hidden;
 }
 
+/* Custom toolbar button icon sizing */
+.webviewer [data-element="rotateCounterClockwiseButton"] img,
+.webviewer [data-element="rotateClockwiseButton"] img,
+.webviewer [data-element="previousPageButton"] img,
+.webviewer [data-element="nextPageButton"] img,
+.webviewer [data-element="toggleHighlightsButton"] img {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 .controls-panel {
   width: 320px;
   padding: 20px;

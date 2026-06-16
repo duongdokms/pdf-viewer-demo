@@ -5,12 +5,6 @@ import './PDFViewer.css';
 const PDFViewer = () => {
   const viewer = useRef(null);
   const webViewerInstanceRef = useRef(null);
-  const [instance, setInstance] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [zoomLevel, setZoomLevel] = useState(100);
-  const [rotation, setRotation] = useState(0);
-  const [highlightsEnabled, setHighlightsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -49,29 +43,214 @@ const PDFViewer = () => {
         path: webViewerPath,
         initialDoc: pdfDoc,
         licenseKey: process.env.REACT_APP_APRYSE_LICENSE_KEY || 'YOUR_LICENSE_KEY_HERE',
-        // Hide default toolbar and UI elements to use custom controls
-        // disabledElements: [
-        //   'header',
-        //   'toolsHeader',
-        //   'searchButton',
-        //   'menuButton',
-        //   'ribbons',
-        //   'toggleNotesButton',
-        // ],
-        // Additional UI customization
         fullAPI: true,
         enableFilePicker: false,
+        isReadOnly: true,
       },
       viewer.current
     ).then((inst) => {
       clearTimeout(timeoutId);
       console.log('WebViewer instance created successfully!');
       webViewerInstanceRef.current = inst;
-      setInstance(inst);
       const { documentViewer, annotationManager, Annotations } = inst.Core;
       
-      // Additional UI cleanup - completely hide the header
-      // inst.UI.disableElements(['header']); // Commented out to show toolbar
+      // Enable readonly mode
+      inst.UI.disableFeatures([inst.UI.Feature.Annotations]);
+
+      // Define button handler functions
+      const rotateClockwise = () => {
+        const currentRotation = documentViewer.getCompleteRotation(documentViewer.getCurrentPage());
+        const newRotation = (currentRotation + 1) % 4;
+        documentViewer.setRotation(newRotation);
+      };
+
+      const rotateCounterClockwise = () => {
+        const currentRotation = documentViewer.getCompleteRotation(documentViewer.getCurrentPage());
+        const newRotation = (currentRotation + 3) % 4;
+        documentViewer.setRotation(newRotation);
+      };
+
+      const previousPage = () => {
+        const current = documentViewer.getCurrentPage();
+        if (current > 1) {
+          documentViewer.setCurrentPage(current - 1);
+        }
+      };
+
+      const nextPage = () => {
+        const current = documentViewer.getCurrentPage();
+        const total = documentViewer.getPageCount();
+        if (current < total) {
+          documentViewer.setCurrentPage(current + 1);
+        }
+      };
+
+      const toggleHighlights = () => {
+        const currentAnnotations = annotationManager.getAnnotationsList();
+        const highlightAnnotations = currentAnnotations.filter(
+          (annot) => annot instanceof Annotations.TextHighlightAnnotation
+        );
+        
+        console.log('Toggle called, found highlights:', highlightAnnotations.length);
+        
+        if (highlightAnnotations.length === 0) {
+          // Add sample highlights
+          const pageNumber = documentViewer.getCurrentPage();
+          const highlight1 = new Annotations.TextHighlightAnnotation({
+            PageNumber: pageNumber,
+            Quads: [{ x1: 100, y1: 100, x2: 200, y2: 100, x3: 200, y3: 120, x4: 100, y4: 120 }],
+            StrokeColor: new Annotations.Color(255, 255, 0, 0.5),
+          });
+          highlight1.Subject = 'Recognized Field';
+          highlight1.setContents('Field detected by form recognition');
+
+          const highlight2 = new Annotations.TextHighlightAnnotation({
+            PageNumber: pageNumber,
+            Quads: [{ x1: 100, y1: 150, x2: 200, y2: 150, x3: 200, y3: 170, x4: 100, y4: 170 }],
+            StrokeColor: new Annotations.Color(0, 255, 0, 0.5),
+          });
+          highlight2.Subject = 'Recognized Label';
+          highlight2.setContents('Label detected by form recognition');
+
+          annotationManager.addAnnotation(highlight1);
+          annotationManager.addAnnotation(highlight2);
+          annotationManager.redrawAnnotation(highlight1);
+          annotationManager.redrawAnnotation(highlight2);
+          console.log('Added highlights');
+          return true; // Highlights are now visible
+        } else {
+          // Remove highlights
+          console.log('Deleting', highlightAnnotations.length, 'highlights');
+          
+          // Delete each annotation
+          highlightAnnotations.forEach(annot => {
+            annotationManager.deleteAnnotation(annot, { imported: false, force: true });
+          });
+          
+          const remaining = annotationManager.getAnnotationsList().filter(a => a instanceof Annotations.TextHighlightAnnotation);
+          console.log('Deleted highlights, remaining:', remaining.length);
+          return false; // Highlights are now hidden
+        }
+      };
+
+      // Add custom control buttons to the main toolbar
+      inst.UI.setHeaderItems(header => {
+        // Get existing items
+        const existingItems = header.getItems();
+        
+        // Find the last zoom-related button index
+        let lastZoomIndex = -1;
+        existingItems.forEach((item, index) => {
+          const element = item.dataElement || '';
+          if (element.toLowerCase().includes('zoom')) {
+            lastZoomIndex = index;
+          }
+        });
+        
+        // Track highlights state
+        let highlightsVisible = false;
+        let isToggling = false; // Prevent double-clicks
+        
+        // Create toggle button for highlights
+        const toggleHighlightsBtn = {
+          type: 'customElement',
+          render: () => {
+            const button = document.createElement('button');
+            button.className = 'Button ActionButton';
+            button.setAttribute('data-element', 'toggleHighlightsButton');
+            button.title = 'Toggle Field Highlights';
+            button.style.cursor = 'pointer';
+            
+            const updateButtonState = () => {
+              button.style.backgroundColor = highlightsVisible ? 'var(--blue-2)' : '';
+              button.innerHTML = `<div class="Icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6.9 9.7l-3.6 3.6c-.4.4-.4 1 0 1.4l2 2c.4.4 1 .4 1.4 0l3.6-3.6-3.4-3.4zm3.4 3.4l7.4-7.4 3.4 3.4-7.4 7.4-3.4-3.4zm9.2-9.2c-.4-.4-1-.4-1.4 0l-1.3 1.3 3.4 3.4 1.3-1.3c.4-.4.4-1 0-1.4l-2-2zM3.5 19h17v2h-17z"/></svg></div>`;
+            };
+            
+            updateButtonState();
+            
+            button.onclick = () => {
+              // Prevent double-clicks
+              if (isToggling) {
+                console.log('Toggle already in progress, ignoring click');
+                return;
+              }
+              
+              isToggling = true;
+              console.log('Button clicked, current state:', highlightsVisible);
+              
+              // Call toggleHighlights and get the new state
+              highlightsVisible = toggleHighlights();
+              updateButtonState();
+              
+              // Re-enable after a short delay
+              setTimeout(() => {
+                isToggling = false;
+              }, 300);
+            };
+            
+            return button;
+          }
+        };
+        
+        // Define custom buttons
+        const customButtons = [
+          { type: 'divider' },
+          // Rotation buttons
+          {
+            type: 'actionButton',
+            img: 'icon-header-page-manipulation-page-rotation-counterclockwise-line',
+            onClick: rotateCounterClockwise,
+            title: 'Rotate Counter-clockwise',
+            dataElement: 'rotateCounterClockwiseButton'
+          },
+          {
+            type: 'actionButton',
+            img: 'icon-header-page-manipulation-page-rotation-clockwise-line',
+            onClick: rotateClockwise,
+            title: 'Rotate Clockwise',
+            dataElement: 'rotateClockwiseButton'
+          },
+          { type: 'divider' },
+          // Page navigation buttons
+          {
+            type: 'actionButton',
+            img: 'icon-chevron-left',
+            onClick: previousPage,
+            title: 'Previous Page',
+            dataElement: 'previousPageButton'
+          },
+          {
+            type: 'actionButton',
+            img: 'icon-chevron-right',
+            onClick: nextPage,
+            title: 'Next Page',
+            dataElement: 'nextPageButton'
+          },
+          { type: 'divider' },
+          // Toggle highlights button
+          toggleHighlightsBtn
+        ];
+        
+        // Insert custom buttons after zoom controls
+        if (lastZoomIndex >= 0) {
+          const newItems = [
+            ...existingItems.slice(0, lastZoomIndex + 1),
+            ...customButtons,
+            ...existingItems.slice(lastZoomIndex + 1)
+          ];
+          header.update(newItems);
+        } else {
+          // If no zoom buttons found, append to the end
+          header.update([...existingItems, ...customButtons]);
+        }
+      });
+
+      // Disable mode selection dropdown and other UI elements
+      inst.UI.disableElements([
+        'viewControlsButton',
+        'toolsHeader',
+        'viewControlsOverlay'
+      ]);
 
       // Document loaded event
       documentViewer.addEventListener('documentLoaded', () => {
@@ -79,9 +258,6 @@ const PDFViewer = () => {
         setIsLoading(false);
         setError(null);
         const pageCount = documentViewer.getPageCount();
-        setTotalPages(pageCount);
-        setCurrentPage(documentViewer.getCurrentPage());
-        setZoomLevel(Math.round(documentViewer.getZoomLevel() * 100));
         
         // Log available features
         console.log('Document loaded with', pageCount, 'pages');
@@ -95,21 +271,6 @@ const PDFViewer = () => {
         // Try loading demo PDF as fallback
         const demoPDF = 'https://pdftron.s3.amazonaws.com/downloads/pl/demo-annotated.pdf';
         inst.UI.loadDocument(demoPDF);
-      });
-
-      // Page number changed event
-      documentViewer.addEventListener('pageNumberUpdated', (pageNumber) => {
-        setCurrentPage(pageNumber);
-      });
-
-      // Zoom changed event
-      documentViewer.addEventListener('zoomUpdated', (zoom) => {
-        setZoomLevel(Math.round(zoom * 100));
-      });
-
-      // Rotation changed event
-      documentViewer.addEventListener('rotationUpdated', (rotation) => {
-        setRotation(rotation);
       });
     }).catch((err) => {
       clearTimeout(timeoutId);
@@ -128,217 +289,8 @@ const PDFViewer = () => {
     };
   }, []);
 
-  // Rotate Clockwise (90 degrees)
-  const rotateClockwise = () => {
-    if (instance) {
-      const { documentViewer } = instance.Core;
-      const currentRotation = documentViewer.getCompleteRotation(currentPage);
-      const newRotation = (currentRotation + 1) % 4; // 0, 1, 2, 3 (0°, 90°, 180°, 270°)
-      documentViewer.setRotation(newRotation);
-      setRotation(newRotation * 90);
-    }
-  };
-
-  // Rotate Counter-clockwise (90 degrees)
-  const rotateCounterClockwise = () => {
-    if (instance) {
-      const { documentViewer } = instance.Core;
-      const currentRotation = documentViewer.getCompleteRotation(currentPage);
-      const newRotation = (currentRotation + 3) % 4; // Equivalent to -90 degrees
-      documentViewer.setRotation(newRotation);
-      setRotation(newRotation * 90);
-    }
-  };
-
-  // Zoom In
-  const zoomIn = () => {
-    if (instance) {
-      const { documentViewer } = instance.Core;
-      const currentZoom = documentViewer.getZoomLevel();
-      documentViewer.zoomTo(currentZoom * 1.25); // Increase by 25%
-    }
-  };
-
-  // Zoom Out
-  const zoomOut = () => {
-    if (instance) {
-      const { documentViewer } = instance.Core;
-      const currentZoom = documentViewer.getZoomLevel();
-      documentViewer.zoomTo(currentZoom * 0.8); // Decrease by 20%
-    }
-  };
-
-  // Previous Page
-  const previousPage = () => {
-    if (instance && currentPage > 1) {
-      const { documentViewer } = instance.Core;
-      documentViewer.setCurrentPage(currentPage - 1);
-    }
-  };
-
-  // Next Page
-  const nextPage = () => {
-    if (instance && currentPage < totalPages) {
-      const { documentViewer } = instance.Core;
-      documentViewer.setCurrentPage(currentPage + 1);
-    }
-  };
-
-  // Toggle Highlights for recognized fields
-  const toggleHighlights = () => {
-    if (instance) {
-      const { documentViewer, annotationManager, Annotations } = instance.Core;
-      
-      if (!highlightsEnabled) {
-        // Add sample highlights to demonstrate field recognition
-        // In a real scenario, these would be based on actual form field detection
-        const doc = documentViewer.getDocument();
-        const pageNumber = currentPage;
-        
-        // Create sample highlight annotations to represent recognized fields
-        const highlight1 = new Annotations.TextHighlightAnnotation({
-          PageNumber: pageNumber,
-          Quads: [
-            { x1: 100, y1: 100, x2: 200, y2: 100, x3: 200, y3: 120, x4: 100, y4: 120 }
-          ],
-          StrokeColor: new Annotations.Color(255, 255, 0, 0.5),
-        });
-        highlight1.Subject = 'Recognized Field';
-        highlight1.setContents('Field detected by form recognition');
-
-        const highlight2 = new Annotations.TextHighlightAnnotation({
-          PageNumber: pageNumber,
-          Quads: [
-            { x1: 100, y1: 150, x2: 200, y2: 150, x3: 200, y3: 170, x4: 100, y4: 170 }
-          ],
-          StrokeColor: new Annotations.Color(0, 255, 0, 0.5),
-        });
-        highlight2.Subject = 'Recognized Label';
-        highlight2.setContents('Label detected by form recognition');
-
-        annotationManager.addAnnotation(highlight1);
-        annotationManager.addAnnotation(highlight2);
-        annotationManager.drawAnnotationsFromList([highlight1, highlight2]);
-        
-        setHighlightsEnabled(true);
-      } else {
-        // Remove all highlights
-        const annotations = annotationManager.getAnnotationsList();
-        const highlightAnnotations = annotations.filter(
-          (annot) => annot instanceof Annotations.TextHighlightAnnotation
-        );
-        annotationManager.deleteAnnotations(highlightAnnotations);
-        setHighlightsEnabled(false);
-      }
-    }
-  };
-
   return (
     <div className="pdf-viewer-container">
-      <div className="controls-panel">
-        <div className="control-section">
-          <h3>Rotation Controls</h3>
-          <div className="button-group">
-            <button 
-              onClick={rotateCounterClockwise} 
-              disabled={!instance}
-              className="control-btn"
-              title="Rotate Counter-clockwise"
-            >
-              ↶ Rotate Left
-            </button>
-            <button 
-              onClick={rotateClockwise} 
-              disabled={!instance}
-              className="control-btn"
-              title="Rotate Clockwise"
-            >
-              ↷ Rotate Right
-            </button>
-            <span className="status-text">Rotation: {rotation}°</span>
-          </div>
-        </div>
-
-        <div className="control-section">
-          <h3>Zoom Controls</h3>
-          <div className="button-group">
-            <button 
-              onClick={zoomOut} 
-              disabled={!instance}
-              className="control-btn"
-              title="Zoom Out"
-            >
-              🔍− Zoom Out
-            </button>
-            <button 
-              onClick={zoomIn} 
-              disabled={!instance}
-              className="control-btn"
-              title="Zoom In"
-            >
-              🔍+ Zoom In
-            </button>
-            <span className="status-text">{zoomLevel}%</span>
-          </div>
-        </div>
-
-        <div className="control-section">
-          <h3>Page Navigation</h3>
-          <div className="button-group">
-            <button 
-              onClick={previousPage} 
-              disabled={!instance || currentPage <= 1}
-              className="control-btn"
-              title="Previous Page"
-            >
-              ← Previous
-            </button>
-            <button 
-              onClick={nextPage} 
-              disabled={!instance || currentPage >= totalPages}
-              className="control-btn"
-              title="Next Page"
-            >
-              Next →
-            </button>
-            <span className="status-text">
-              Page {currentPage} of {totalPages}
-            </span>
-          </div>
-        </div>
-
-        <div className="control-section">
-          <h3>Field Highlights</h3>
-          <div className="button-group">
-            <button 
-              onClick={toggleHighlights} 
-              disabled={!instance}
-              className={`control-btn ${highlightsEnabled ? 'active' : ''}`}
-              title="Toggle Field Highlights"
-            >
-              {highlightsEnabled ? '✓ Highlights ON' : '○ Highlights OFF'}
-            </button>
-            <span className="status-text">
-              {highlightsEnabled ? 'Showing recognized fields' : 'Highlights disabled'}
-            </span>
-          </div>
-        </div>
-
-        <div className="info-panel">
-          <h4>📋 Implementation Notes:</h4>
-          <ul>
-            <li>✅ <strong>Rotation:</strong> Built-in API (setRotation)</li>
-            <li>✅ <strong>Zoom:</strong> Built-in API (zoomTo)</li>
-            <li>✅ <strong>Navigation:</strong> Built-in API (setCurrentPage)</li>
-            <li>⚠️ <strong>Highlights:</strong> Custom implementation using Annotations API</li>
-            <li>🎨 <strong>Default toolbar:</strong> Visible (Apryse toolbar shown)</li>
-          </ul>
-          <p style={{ fontSize: '0.75rem', marginTop: '10px', opacity: 0.8 }}>
-            See <strong>UI_CUSTOMIZATION.md</strong> for hiding toolbar options
-          </p>
-        </div>
-      </div>
-
       <div className="viewer-wrapper">
         {isLoading && (
           <div className="loading-overlay">
