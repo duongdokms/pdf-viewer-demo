@@ -90,46 +90,73 @@ const PDFViewer = () => {
         const highlightAnnotations = currentAnnotations.filter(
           (annot) => annot instanceof Annotations.TextHighlightAnnotation
         );
-        
-        console.log('Toggle called, found highlights:', highlightAnnotations.length);
-        
+
         if (highlightAnnotations.length === 0) {
-          // Add sample highlights
-          const pageNumber = documentViewer.getCurrentPage();
-          const highlight1 = new Annotations.TextHighlightAnnotation({
-            PageNumber: pageNumber,
-            Quads: [{ x1: 100, y1: 100, x2: 200, y2: 100, x3: 200, y3: 120, x4: 100, y4: 120 }],
-            StrokeColor: new Annotations.Color(255, 255, 0, 0.5),
-          });
-          highlight1.Subject = 'Recognized Field';
-          highlight1.setContents('Field detected by form recognition');
-
-          const highlight2 = new Annotations.TextHighlightAnnotation({
-            PageNumber: pageNumber,
-            Quads: [{ x1: 100, y1: 150, x2: 200, y2: 150, x3: 200, y3: 170, x4: 100, y4: 170 }],
-            StrokeColor: new Annotations.Color(0, 255, 0, 0.5),
-          });
-          highlight2.Subject = 'Recognized Label';
-          highlight2.setContents('Label detected by form recognition');
-
-          annotationManager.addAnnotation(highlight1);
-          annotationManager.addAnnotation(highlight2);
-          annotationManager.redrawAnnotation(highlight1);
-          annotationManager.redrawAnnotation(highlight2);
-          console.log('Added highlights');
-          return true; // Highlights are now visible
-        } else {
-          // Remove highlights
-          console.log('Deleting', highlightAnnotations.length, 'highlights');
+          // Search for the text "Social Security Number"
+          const searchText = 'Social Security Number';
+          console.log('Starting text search for:', searchText);
           
-          // Delete each annotation
+          const searchMode = inst.Core.Search.Mode.PAGE_STOP | inst.Core.Search.Mode.HIGHLIGHT;
+          
+          const searchOptions = {
+            fullSearch: true,
+            onResult: (result) => {
+              console.log('Search result:', result);
+              if (result.resultCode === inst.Core.Search.ResultCode.FOUND) {
+                const { quads, pageNum, resultStr } = result;
+                console.log('Found text on page:', pageNum, 'Text:', resultStr);
+                console.log('Quads:', JSON.stringify(quads, null, 2));
+                
+                // The quads might already be in correct format, try using them directly
+                // If not, we may need to map the unusual property names
+                let processedQuads = quads;
+                
+                // Check if quads have the unusual property names and transform if needed
+                if (quads && quads.length > 0 && quads[0].Ys !== undefined) {
+                  console.log('Detected unusual quad format, transforming...');
+                  processedQuads = quads.map(quad => ({
+                    x1: quad.x1,
+                    y1: quad.y1,      // bottom left y
+                    x2: quad.x2,
+                    y2: quad.y2,      // bottom right y
+                    x3: quad.x2,
+                    y3: quad.qm,      // top right y (using qm property)
+                    x4: quad.x1,
+                    y4: quad.qm       // top left y (using qm property)
+                  }));
+                } else {
+                  console.log('Using quads as-is');
+                }
+                
+                console.log('Processed quads:', JSON.stringify(processedQuads, null, 2));
+                
+                // Create a highlight for this result
+                const highlight = new Annotations.TextHighlightAnnotation({
+                  PageNumber: pageNum,
+                  Quads: processedQuads,
+                  StrokeColor: new Annotations.Color(255, 255, 0, 0.5),
+                });
+                highlight.Subject = 'Social Security Number';
+                highlight.setContents('Field detected by form recognition');
+                annotationManager.addAnnotation(highlight);
+                annotationManager.redrawAnnotation(highlight);
+                console.log('Highlight annotation added');
+              } else if (result.resultCode === inst.Core.Search.ResultCode.NOT_FOUND) {
+                console.log('Text not found in document');
+              }
+            }
+          };
+          
+          // Perform the text search
+          documentViewer.textSearchInit(searchText, searchMode, searchOptions);
+          
+          return true;
+        } else {
+          console.log('Removing', highlightAnnotations.length, 'highlight(s)');
           highlightAnnotations.forEach(annot => {
             annotationManager.deleteAnnotation(annot, { imported: false, force: true });
           });
-          
-          const remaining = annotationManager.getAnnotationsList().filter(a => a instanceof Annotations.TextHighlightAnnotation);
-          console.log('Deleted highlights, remaining:', remaining.length);
-          return false; // Highlights are now hidden
+          return false;
         }
       };
 
@@ -169,23 +196,11 @@ const PDFViewer = () => {
             updateButtonState();
             
             button.onclick = () => {
-              // Prevent double-clicks
-              if (isToggling) {
-                console.log('Toggle already in progress, ignoring click');
-                return;
-              }
-              
+              if (isToggling) return;
               isToggling = true;
-              console.log('Button clicked, current state:', highlightsVisible);
-              
-              // Call toggleHighlights and get the new state
               highlightsVisible = toggleHighlights();
               updateButtonState();
-              
-              // Re-enable after a short delay
-              setTimeout(() => {
-                isToggling = false;
-              }, 300);
+              setTimeout(() => { isToggling = false; }, 300);
             };
             
             return button;
