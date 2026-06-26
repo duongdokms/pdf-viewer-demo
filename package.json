@@ -5,11 +5,15 @@
   "private": true,
   "homepage": "https://duongdokms.github.io/pdf-viewer-demo",
   "dependencies": {
+    "@pdftron/pdfnet-node": "^11.13.0",
     "@pdftron/webviewer": "^10.11.0",
+    "fs": "^0.0.1-security",
+    "fs-extra": "^11.1.1",
+    "path": "^0.12.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "fs-extra": "^11.1.1"
+    "url": "^0.11.4"
   },
   "scripts": {
     "start": "react-scripts start",
