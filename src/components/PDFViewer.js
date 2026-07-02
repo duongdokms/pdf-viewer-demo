@@ -85,72 +85,135 @@ const PDFViewer = () => {
         }
       };
 
-      const toggleHighlights = () => {
+      const toggleHighlights = async () => {
         const currentAnnotations = annotationManager.getAnnotationsList();
         const highlightAnnotations = currentAnnotations.filter(
-          (annot) => annot instanceof Annotations.TextHighlightAnnotation
+          (annot) => annot instanceof Annotations.RectangleAnnotation && annot.Subject
         );
 
         if (highlightAnnotations.length === 0) {
-          // Search for the text "Social Security Number"
-          const searchText = 'Social Security Number';
-          console.log('Starting text search for:', searchText);
-          
-          const searchMode = inst.Core.Search.Mode.PAGE_STOP | inst.Core.Search.Mode.HIGHLIGHT;
-          
-          const searchOptions = {
-            fullSearch: true,
-            onResult: (result) => {
-              console.log('Search result:', result);
-              if (result.resultCode === inst.Core.Search.ResultCode.FOUND) {
-                const { quads, pageNum, resultStr } = result;
-                console.log('Found text on page:', pageNum, 'Text:', resultStr);
-                console.log('Quads:', JSON.stringify(quads, null, 2));
+          // Load BluePrint Page Response.json and extract coordinates
+          try {
+            console.log('Loading BluePrint Page Response.json...');
+            const publicUrl = process.env.PUBLIC_URL || '';
+            
+            // Try multiple URL formats
+            const possibleUrls = [
+              `${publicUrl}/BluePrint%20Page%20Response.json`,
+              `${window.location.origin}${publicUrl}/BluePrint%20Page%20Response.json`,
+              '/BluePrint%20Page%20Response.json'
+            ];
+            
+            console.log('Trying URLs:', possibleUrls);
+            
+            let response = null;
+            let blueprintData = null;
+            
+            for (const url of possibleUrls) {
+              try {
+                console.log(`Attempting to fetch: ${url}`);
+                response = await fetch(url);
+                console.log(`Response for ${url}:`, response.status, response.statusText);
                 
-                // The quads might already be in correct format, try using them directly
-                // If not, we may need to map the unusual property names
-                let processedQuads = quads;
-                
-                // Check if quads have the unusual property names and transform if needed
-                if (quads && quads.length > 0 && quads[0].Ys !== undefined) {
-                  console.log('Detected unusual quad format, transforming...');
-                  processedQuads = quads.map(quad => ({
-                    x1: quad.x1,
-                    y1: quad.y1,      // bottom left y
-                    x2: quad.x2,
-                    y2: quad.y2,      // bottom right y
-                    x3: quad.x2,
-                    y3: quad.qm,      // top right y (using qm property)
-                    x4: quad.x1,
-                    y4: quad.qm       // top left y (using qm property)
-                  }));
-                } else {
-                  console.log('Using quads as-is');
+                if (response.ok) {
+                  blueprintData = await response.json();
+                  console.log('Successfully loaded blueprint data from:', url);
+                  break;
                 }
-                
-                console.log('Processed quads:', JSON.stringify(processedQuads, null, 2));
-                
-                // Create a highlight for this result
-                const highlight = new Annotations.TextHighlightAnnotation({
-                  PageNumber: pageNum,
-                  Quads: processedQuads,
-                  StrokeColor: new Annotations.Color(255, 255, 0, 0.5),
-                });
-                highlight.Subject = 'Social Security Number';
-                highlight.setContents('Field detected by form recognition');
-                annotationManager.addAnnotation(highlight);
-                annotationManager.redrawAnnotation(highlight);
-                console.log('Highlight annotation added');
-              } else if (result.resultCode === inst.Core.Search.ResultCode.NOT_FOUND) {
-                console.log('Text not found in document');
+              } catch (err) {
+                console.error(`Failed to fetch from ${url}:`, err);
               }
             }
-          };
-          
-          // Perform the text search
-          documentViewer.textSearchInit(searchText, searchMode, searchOptions);
-          
-          return true;
+            
+            if (!blueprintData) {
+              throw new Error('Could not load blueprint data from any URL. Check Network tab in DevTools.');
+            }
+            
+            console.log('Blueprint data loaded successfully');
+            
+            // Get current page info - we need actual page dimensions
+            const pageNum = documentViewer.getCurrentPage();
+            const pageWidth = documentViewer.getPageWidth(pageNum);
+            const pageHeight = documentViewer.getPageHeight(pageNum);
+            
+            console.log(`Page ${pageNum} dimensions: ${pageWidth} x ${pageHeight}`);
+            
+            // Function to extract all fields with coordinates from the schema
+            const extractFieldsWithCoordinates = (obj, path = '') => {
+              const fields = [];
+              
+              if (obj && typeof obj === 'object') {
+                // Check if this object has coordinates
+                if (obj.coordinates && obj.description) {
+                  fields.push({
+                    path: path,
+                    description: obj.description,
+                    coordinates: obj.coordinates,
+                    type: obj.type,
+                    instruction: obj.instruction
+                  });
+                }
+                
+                // Recursively process nested objects
+                for (const key in obj) {
+                  if (key !== 'coordinates' && typeof obj[key] === 'object') {
+                    const newPath = path ? `${path}.${key}` : key;
+                    fields.push(...extractFieldsWithCoordinates(obj[key], newPath));
+                  }
+                }
+              }
+              
+              return fields;
+            };
+            
+            // Extract all fields with coordinates
+            const fieldsWithCoordinates = extractFieldsWithCoordinates(blueprintData);
+            console.log(`Found ${fieldsWithCoordinates.length} fields with coordinates`);
+            
+            // Create highlights for each field
+            fieldsWithCoordinates.forEach((field, index) => {
+              const { coordinates, description } = field;
+              const { x, y, w, h } = coordinates;
+              
+              // WebViewer annotations use top-left origin (like JSON)
+              // NOT bottom-left like PDF internal coordinates
+              const rectX = x * pageWidth;
+              const rectY = y * pageHeight;
+              const rectWidth = w * pageWidth;
+              const rectHeight = h * pageHeight;
+              
+              console.log(`\n======== Field ${index + 1}: ${description} ========`);
+              console.log(`Normalized coords: x=${x.toFixed(4)}, y=${y.toFixed(4)}, w=${w.toFixed(4)}, h=${h.toFixed(4)}`);
+              console.log(`Page size: ${pageWidth} x ${pageHeight}`);
+              console.log(`Rectangle (top-left origin): X=${rectX.toFixed(1)}, Y=${rectY.toFixed(1)}, W=${rectWidth.toFixed(1)}, H=${rectHeight.toFixed(1)}`);
+              
+              // Use RectangleAnnotation with top-left coordinate system
+              const highlight = new Annotations.RectangleAnnotation({
+                PageNumber: pageNum,
+                X: rectX,
+                Y: rectY,
+                Width: rectWidth,
+                Height: rectHeight,
+                StrokeColor: new Annotations.Color(255, 255, 0, 0.5),
+                FillColor: new Annotations.Color(255, 255, 0, 0.4),
+                StrokeThickness: 2
+              });
+              
+              highlight.Subject = description;
+              highlight.setContents(`Field: ${description}\nPath: ${field.path}`);
+              
+              annotationManager.addAnnotation(highlight);
+              annotationManager.redrawAnnotation(highlight);
+            });
+            
+            console.log(`Created ${fieldsWithCoordinates.length} highlight annotations`);
+            return true;
+            
+          } catch (error) {
+            console.error('Error loading blueprint data:', error);
+            alert('Failed to load BluePrint Page Response.json. Please ensure the file exists in the public folder.');
+            return false;
+          }
         } else {
           console.log('Removing', highlightAnnotations.length, 'highlight(s)');
           highlightAnnotations.forEach(annot => {
@@ -195,10 +258,10 @@ const PDFViewer = () => {
             
             updateButtonState();
             
-            button.onclick = () => {
+            button.onclick = async () => {
               if (isToggling) return;
               isToggling = true;
-              highlightsVisible = toggleHighlights();
+              highlightsVisible = await toggleHighlights();
               updateButtonState();
               setTimeout(() => { isToggling = false; }, 300);
             };

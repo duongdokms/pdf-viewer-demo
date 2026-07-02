@@ -1,0 +1,367 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "Individual life insurance application page 1 capturing proposed insured personal details and employment history",
+    "class": "individual_life_insurance_application",
+    "type": "object",
+    "properties": {
+        "proposed_insured_personal_details": {
+            "$ref": "#/definitions/proposed_insured_personal_details"
+        },
+        "proposed_insured_employment_history": {
+            "$ref": "#/definitions/proposed_insured_employment_history"
+        },
+        "testnew": {
+            "type": "andrew",
+            "inferenceType": "explicit",
+            "instruction": "testttttt"
+        }
+    },
+    "definitions": {
+        "proposed_insured_personal_details": {
+            "type": "object",
+            "properties": {
+                "fullname": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Name (First, Middle, Last, Suffix)",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0369,
+                        "y": 0.1931,
+                        "w": 0.195,
+                        "h": 0.0129
+                    }
+                },
+                "gender": {
+                    "type": "boolean",
+                    "inferenceType": "explicit",
+                    "description": "Male",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.7559,
+                        "y": 0.2175,
+                        "w": 0.0286,
+                        "h": 0.0101
+                    }
+                },
+                "sex_female": {
+                    "type": "boolean",
+                    "inferenceType": "explicit",
+                    "description": "Female",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.8395,
+                        "y": 0.2175,
+                        "w": 0.0442,
+                        "h": 0.01
+                    }
+                },
+                "ssn": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Social Security Number",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.036,
+                        "y": 0.2438,
+                        "w": 0.1404,
+                        "h": 0.0125
+                    }
+                },
+                "dob": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Date of Birth",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.3586,
+                        "y": 0.2429,
+                        "w": 0.074,
+                        "h": 0.01
+                    }
+                },
+                "marital_status": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Marital Status",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.621,
+                        "y": 0.2434,
+                        "w": 0.0814,
+                        "h": 0.01
+                    }
+                },
+                "birth_state_country": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Birth State/Country",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0374,
+                        "y": 0.2924,
+                        "w": 0.1127,
+                        "h": 0.0124
+                    }
+                },
+                "us_citizen_yes": {
+                    "type": "boolean",
+                    "inferenceType": "explicit",
+                    "description": "Yes",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.7686,
+                        "y": 0.3146,
+                        "w": 0.0232,
+                        "h": 0.0102
+                    }
+                },
+                "us_citizen_no": {
+                    "type": "boolean",
+                    "inferenceType": "explicit",
+                    "description": "No",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.8684,
+                        "y": 0.3142,
+                        "w": 0.017,
+                        "h": 0.0103
+                    }
+                },
+                "country_of_citizenship": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Country of Citizenship",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0349,
+                        "y": 0.3464,
+                        "w": 0.1308,
+                        "h": 0.0126
+                    }
+                },
+                "permanent_residence_us_yes": {
+                    "type": "boolean",
+                    "inferenceType": "explicit",
+                    "description": "Yes",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.7708,
+                        "y": 0.3721,
+                        "w": 0.0231,
+                        "h": 0.01
+                    }
+                },
+                "permanent_residence_us_no": {
+                    "type": "boolean",
+                    "inferenceType": "explicit",
+                    "description": "No",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.8704,
+                        "y": 0.3715,
+                        "w": 0.0172,
+                        "h": 0.0102
+                    }
+                },
+                "driver_license_number_state_expiration": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Driver License Number, State and Expiration Date",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.037,
+                        "y": 0.4005,
+                        "w": 0.2965,
+                        "h": 0.0125
+                    }
+                },
+                "residence_address": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Residence Address",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0368,
+                        "y": 0.4597,
+                        "w": 0.1157,
+                        "h": 0.0101
+                    }
+                },
+                "residence_city": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "City",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0349,
+                        "y": 0.5102,
+                        "w": 0.0234,
+                        "h": 0.0125
+                    }
+                },
+                "residence_state": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "State",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.3567,
+                        "y": 0.5102,
+                        "w": 0.0311,
+                        "h": 0.0102
+                    }
+                },
+                "residence_zip_code": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Zip Code",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.6167,
+                        "y": 0.5101,
+                        "w": 0.0548,
+                        "h": 0.0124
+                    }
+                },
+                "mailing_address": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Mailing Address (If different than Residence Address)",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0349,
+                        "y": 0.5642,
+                        "w": 0.3254,
+                        "h": 0.0125
+                    }
+                },
+                "mailing_city": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "City",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.036,
+                        "y": 0.6166,
+                        "w": 0.023,
+                        "h": 0.0126
+                    }
+                },
+                "mailing_state": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "State",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.3564,
+                        "y": 0.6166,
+                        "w": 0.0312,
+                        "h": 0.0101
+                    }
+                },
+                "mailing_zip_code": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Zip Code",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.6183,
+                        "y": 0.6176,
+                        "w": 0.0547,
+                        "h": 0.0125
+                    }
+                },
+                "primary_phone": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Primary Phone",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0345,
+                        "y": 0.6738,
+                        "w": 0.0882,
+                        "h": 0.0125
+                    }
+                },
+                "email_address": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Email Address",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.506,
+                        "y": 0.6744,
+                        "w": 0.0864,
+                        "h": 0.0102
+                    }
+                }
+            }
+        },
+        "proposed_insured_employment_history": {
+            "type": "object",
+            "properties": {
+                "occupation": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Occupation",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0369,
+                        "y": 0.7678,
+                        "w": 0.0671,
+                        "h": 0.0125
+                    }
+                },
+                "annual_income": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Annual Income",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.4735,
+                        "y": 0.7691,
+                        "w": 0.0894,
+                        "h": 0.01
+                    }
+                },
+                "how_long": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "How Long?",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.7366,
+                        "y": 0.7699,
+                        "w": 0.0671,
+                        "h": 0.0129
+                    }
+                },
+                "employer_name": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Employer Name",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.0379,
+                        "y": 0.82,
+                        "w": 0.0959,
+                        "h": 0.0126
+                    }
+                },
+                "employer_address": {
+                    "type": "string",
+                    "inferenceType": "explicit",
+                    "description": "Employer Address",
+                    "instruction": null,
+                    "coordinates": {
+                        "x": 0.037,
+                        "y": 0.8691,
+                        "w": 0.1091,
+                        "h": 0.0127
+                    }
+                }
+            }
+        }
+    }
+}
